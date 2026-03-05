@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV Data Classification Tool</title>
-  <meta name="description" content="Data classification wizard aligned to ISO/IEC 27001:2022 and GDPR (EU) 2016/679">
+  <title>CV Dataset Classification Tool</title>
+  <meta name="description" content="Dataset classification tool aligned to ISO/IEC 27001:2022 and GDPR (EU) 2016/679">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1466.1 699.15'%3E%3Cpath d='m1168.42 233.05c-13.36 0-26.18 5.31-35.63 14.76l-140 140c-11.49 11.49-26.77 17.82-43.03 17.82s-31.53-6.33-43.03-17.82l-107.98-107.98c-30.17-30.17-70.28-46.78-112.95-46.78h-333.37c-63.1 0-116.92 48.98-119.3 112.03-2.5 66.29 50.7 121.02 116.44 121.02h388.1l-45.61-45.61c-9.51-9.51-22.41-14.85-35.86-14.85h-304.98c-29.18 0-54.72-21.61-57.45-50.66-3.14-33.33 23.11-61.46 55.8-61.46h336.23c26.33 0 51.58 10.46 70.2 29.08l106.19 106.19c22.22 22.22 51.81 36.15 83.22 37.24 34.02 1.18 66.2-11.52 90.13-35.46l197.51-197.51h-64.63z'/%3E%3C/svg%3E">
 
   <!-- Self-hosted Plus Jakarta Sans -->
   <style>
@@ -45,6 +46,7 @@
       --badge-bg: rgba(168, 255, 163, 0.1);
       --badge-border: rgba(168, 255, 163, 0.25);
       --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --minimap-line: #333;
     }
 
     /* ── Theme: Light ────────────────────────────────── */
@@ -61,16 +63,12 @@
       --badge-bg: rgba(0, 194, 0, 0.08);
       --badge-border: rgba(0, 194, 0, 0.25);
       --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --minimap-line: #ccc;
     }
 
     /* ── Reset & Base ────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      font-size: 16px;
-      scroll-behavior: smooth;
-    }
-
+    html { font-size: 16px; scroll-behavior: smooth; }
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -81,10 +79,104 @@
     }
 
     /* ── Layout ───────────────────────────────────────── */
-    .container {
-      max-width: 800px;
+    .page-layout {
+      display: flex;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 2rem 1.5rem 4rem;
+      gap: 2rem;
+    }
+
+    .main-content {
+      flex: 1;
+      max-width: 780px;
+    }
+
+    /* ── Mini Decision Tree (sidebar) ─────────────────── */
+    .minimap {
+      position: sticky;
+      top: 2rem;
+      width: 180px;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+
+    .minimap-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .minimap-tree {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .minimap-node {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+      text-decoration: none;
+    }
+
+    .minimap-node:hover {
+      color: var(--text);
+      background: var(--bg-card);
+    }
+
+    .minimap-node.active {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .minimap-node.completed {
+      color: var(--accent);
+    }
+
+    .minimap-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      transition: all 0.2s var(--ease);
+    }
+
+    .minimap-node.active .minimap-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .minimap-node.completed .minimap-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .minimap-line {
+      width: 2px;
+      height: 16px;
+      background: var(--minimap-line);
+      margin-left: 0.6rem;
+      margin-top: -2px;
+      margin-bottom: -2px;
+      transition: background 0.2s var(--ease);
+    }
+
+    .minimap-line.completed {
+      background: var(--accent);
     }
 
     /* ── Header ───────────────────────────────────────── */
@@ -92,7 +184,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       gap: 1rem;
     }
 
@@ -102,10 +194,7 @@
       gap: 1rem;
     }
 
-    .logo {
-      height: 32px;
-      width: auto;
-    }
+    .logo { height: 32px; width: auto; }
 
     .header-title {
       font-size: 1.25rem;
@@ -119,7 +208,6 @@
       gap: 0.75rem;
     }
 
-    /* ── Theme Toggle ─────────────────────────────────── */
     .theme-toggle {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -140,8 +228,7 @@
       border-color: var(--accent);
     }
 
-    /* ── Print Button ─────────────────────────────────── */
-    .print-btn {
+    .screenshot-btn {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -154,99 +241,62 @@
       transition: all 0.2s var(--ease);
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
     }
 
-    .print-btn:hover {
+    .screenshot-btn:hover {
       background: var(--bg-card-hover);
       border-color: var(--accent);
     }
 
-    /* ── Progress Bar ─────────────────────────────────── */
-    .progress-container {
-      margin-bottom: 2rem;
+    .screenshot-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .progress-steps {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-      margin-bottom: 0.75rem;
+    .screenshot-btn.capturing {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
-    .progress-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      z-index: 1;
-      flex: 1;
-    }
-
-    .progress-dot {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
+    .screenshot-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--accent);
+      color: var(--accent-text);
+      padding: 0.6rem 1.5rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
       transition: all 0.3s var(--ease);
-      color: var(--text-muted);
+      z-index: 999;
     }
 
-    .progress-step.active .progress-dot {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--accent-text);
+    .screenshot-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
-    .progress-step.completed .progress-dot {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--accent-text);
+    /* ── Section Card ─────────────────────────────────── */
+    .section {
+      margin-bottom: 2.5rem;
+      scroll-margin-top: 1.5rem;
     }
 
-    .progress-label {
-      font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-      text-align: center;
-      transition: color 0.3s var(--ease);
-    }
-
-    .progress-step.active .progress-label,
-    .progress-step.completed .progress-label {
-      color: var(--text);
-    }
-
-    .progress-bar-track {
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      transition: width 0.4s var(--ease);
-      width: 0%;
-    }
-
-    /* ── Card ──────────────────────────────────────────── */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2rem;
-      margin-bottom: 1.5rem;
       transition: all 0.3s var(--ease);
     }
 
@@ -264,78 +314,90 @@
       line-height: 1.5;
     }
 
-    /* ── Guidance Accordion ────────────────────────────── */
-    .guidance-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
+    /* ── Definition Box ───────────────────────────────── */
+    .definition-box {
       background: var(--badge-bg);
       border: 1px solid var(--badge-border);
       border-radius: var(--radius-sm);
-      padding: 0.4rem 0.85rem;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.8rem;
-      font-weight: 500;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+
+    .definition-box strong {
       color: var(--accent);
+    }
+
+    /* ── Dataset Name Input ───────────────────────────── */
+    .dataset-name-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: border-color 0.2s var(--ease);
+      outline: none;
+    }
+
+    .dataset-name-input:focus {
+      border-color: var(--accent);
+    }
+
+    .dataset-name-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* ── PII Yes/No Toggle ────────────────────────────── */
+    .pii-toggle {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .pii-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
       transition: all 0.2s var(--ease);
-      margin-bottom: 1.25rem;
+      font-weight: 600;
+      font-size: 0.95rem;
     }
 
-    .guidance-toggle:hover {
-      background: var(--accent);
-      color: var(--accent-text);
+    .pii-option:hover {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
     }
 
-    .guidance-toggle .arrow {
-      transition: transform 0.2s var(--ease);
-      font-size: 0.65rem;
+    .pii-option.selected {
+      border-color: var(--accent);
+      background: var(--badge-bg);
+      color: var(--accent);
     }
 
-    .guidance-toggle.open .arrow {
-      transform: rotate(90deg);
-    }
-
-    .guidance-content {
+    /* ── GDPR section (conditionally visible) ─────────── */
+    .gdpr-section-wrapper {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease);
       opacity: 0;
+      transition: max-height 0.4s var(--ease), opacity 0.3s var(--ease), margin 0.3s var(--ease);
+      margin-top: 0;
     }
 
-    .guidance-content.open {
-      max-height: 600px;
+    .gdpr-section-wrapper.visible {
+      max-height: 800px;
       opacity: 1;
-      margin-bottom: 1.25rem;
-    }
-
-    .guidance-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-    }
-
-    .guidance-table th {
-      text-align: left;
-      padding: 0.5rem 0.75rem;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .guidance-table td {
-      padding: 0.55rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-      line-height: 1.45;
-      vertical-align: top;
-    }
-
-    .guidance-table tr:last-child td {
-      border-bottom: none;
+      margin-top: 2.5rem;
     }
 
     /* ── Radio Options ─────────────────────────────────── */
@@ -377,9 +439,7 @@
       position: relative;
     }
 
-    .option-label input[type="checkbox"] {
-      border-radius: 4px;
-    }
+    .option-label input[type="checkbox"] { border-radius: 4px; }
 
     .option-label input[type="radio"]:checked,
     .option-label input[type="checkbox"]:checked {
@@ -400,7 +460,7 @@
     }
 
     .option-label input[type="checkbox"]:checked::after {
-      content: '✓';
+      content: '\2713';
       position: absolute;
       color: var(--accent-text);
       font-size: 12px;
@@ -415,9 +475,7 @@
       background: var(--badge-bg);
     }
 
-    .option-text {
-      flex: 1;
-    }
+    .option-text { flex: 1; }
 
     .option-text strong {
       display: block;
@@ -432,7 +490,16 @@
       line-height: 1.4;
     }
 
-    /* ── Dual Column (Integrity + Availability) ────────── */
+    .option-example {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.2rem;
+      opacity: 0.8;
+    }
+
+    /* ── Dual Column ──────────────────────────────────── */
     .dual-column {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -451,71 +518,88 @@
       margin-bottom: 1rem;
     }
 
-    /* ── GDPR Checkboxes ──────────────────────────────── */
+    /* ── GDPR Grid ────────────────────────────────────── */
     .gdpr-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.6rem;
     }
 
-    .gdpr-grid .option-label {
-      padding: 0.75rem 0.9rem;
-    }
+    .gdpr-grid .option-label { padding: 0.75rem 0.9rem; }
 
-    /* ── Navigation Buttons ───────────────────────────── */
-    .nav-buttons {
+    /* ── Section Divider ──────────────────────────────── */
+    .section-divider {
       display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 0.5rem;
-    }
-
-    .btn {
-      font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 600;
-      padding: 0.7rem 1.75rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s var(--ease);
-      display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 1rem;
+      margin: 0.5rem 0;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
 
-    .btn-secondary {
-      background: var(--bg-card);
-      color: var(--text);
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
 
-    .btn-secondary:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--accent);
+    /* ── Section locked state ─────────────────────────── */
+    .section-locked {
+      opacity: 0.35;
+      pointer-events: none;
+      filter: grayscale(0.5);
     }
 
-    .btn-primary {
+    .section-locked .card {
+      position: relative;
+    }
+
+    /* ── Generate Button ──────────────────────────────── */
+    .generate-section {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .btn-generate {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.9rem 2.5rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--accent);
       background: var(--accent);
       color: var(--accent-text);
-      border-color: var(--accent);
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
     }
 
-    .btn-primary:hover {
+    .btn-generate:hover {
       background: var(--accent-hover);
       border-color: var(--accent-hover);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.4;
+    .btn-generate:disabled {
+      opacity: 0.3;
       cursor: not-allowed;
     }
 
     .btn-reset {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
       background: transparent;
       color: var(--text-muted);
-      border-color: var(--border);
-      font-size: 0.8rem;
-      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+      margin-top: 0.75rem;
     }
 
     .btn-reset:hover {
@@ -523,11 +607,14 @@
       border-color: #ff5555;
     }
 
-    /* ── Step Visibility ──────────────────────────────── */
-    .step { display: none; }
-    .step.active { display: block; }
-
     /* ── Results ───────────────────────────────────────── */
+    .result-section {
+      display: none;
+      scroll-margin-top: 1.5rem;
+    }
+
+    .result-section.visible { display: block; }
+
     .result-overall {
       text-align: center;
       margin-bottom: 2rem;
@@ -602,21 +689,10 @@
     .cia-card-value.critical { color: #f87171; }
 
     /* ── GDPR Flags ───────────────────────────────────── */
-    .gdpr-flags {
-      margin-bottom: 2rem;
-    }
+    .gdpr-flags { margin-bottom: 2rem; }
+    .gdpr-flags-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; }
 
-    .gdpr-flags-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-    }
-
-    .gdpr-flag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
+    .gdpr-flag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
     .gdpr-flag {
       display: inline-flex;
@@ -644,15 +720,8 @@
     }
 
     /* ── ISO Controls Table ───────────────────────────── */
-    .iso-section {
-      margin-bottom: 2rem;
-    }
-
-    .iso-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-    }
+    .iso-section { margin-bottom: 2rem; }
+    .iso-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; }
 
     .iso-table {
       width: 100%;
@@ -679,9 +748,7 @@
       line-height: 1.4;
     }
 
-    .iso-table tr:last-child td {
-      border-bottom: none;
-    }
+    .iso-table tr:last-child td { border-bottom: none; }
 
     .iso-table .annex-tag {
       display: inline-block;
@@ -694,16 +761,67 @@
       white-space: nowrap;
     }
 
-    /* ── Links Section ────────────────────────────────── */
-    .links-section {
+    /* ── Markdown Documentation Output ────────────────── */
+    .doc-output {
       margin-top: 2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
     }
 
-    .links-title {
-      font-size: 0.85rem;
-      font-weight: 700;
+    .doc-output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 0.75rem;
     }
+
+    .doc-output-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .btn-copy {
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+    }
+
+    .btn-copy:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-copy.copied {
+      border-color: var(--accent);
+      background: var(--badge-bg);
+      color: var(--accent);
+    }
+
+    .doc-markdown {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--text);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* ── Links ─────────────────────────────────────────── */
+    .links-section { margin-top: 2rem; }
+    .links-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; }
 
     .links-grid {
       display: grid;
@@ -732,8 +850,19 @@
     }
 
     .link-item .link-icon {
-      font-size: 0.9rem;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .link-item .link-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* ── Footer ────────────────────────────────────────── */
@@ -746,25 +875,23 @@
       color: var(--text-muted);
     }
 
-    .footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
 
     /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .minimap { display: none; }
+      .page-layout { padding: 1.5rem 1rem 3rem; }
+    }
+
     @media (max-width: 640px) {
-      .container { padding: 1.25rem 1rem 3rem; }
-      .header { flex-wrap: wrap; }
       .card { padding: 1.5rem; }
       .dual-column { grid-template-columns: 1fr; }
       .gdpr-grid { grid-template-columns: 1fr; }
       .result-cia-grid { grid-template-columns: 1fr; }
       .links-grid { grid-template-columns: 1fr; }
-      .progress-label { font-size: 0.6rem; }
+      .header { flex-wrap: wrap; }
+      .pii-toggle { flex-direction: column; }
     }
 
     @media (max-width: 560px) {
@@ -775,11 +902,12 @@
     /* ── Print ─────────────────────────────────────────── */
     @media print {
       body { background: #fff !important; color: #000 !important; }
+      .minimap, .theme-toggle, .screenshot-btn, .screenshot-toast, .btn-generate, .btn-reset, .btn-copy { display: none !important; }
       .card { border: 1px solid #ccc !important; background: #fff !important; break-inside: avoid; }
-      .theme-toggle, .print-btn, .nav-buttons, .progress-container, .btn-reset { display: none !important; }
-      .step { display: none !important; }
-      .step.active { display: block !important; }
+      .section-locked { opacity: 1 !important; pointer-events: auto !important; filter: none !important; }
+      .result-section { display: block !important; }
       .link-item { border: 1px solid #ccc !important; }
+      .page-layout { max-width: 100%; }
     }
 
     /* ── Animations ────────────────────────────────────── */
@@ -787,310 +915,382 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    .step.active {
-      animation: fadeIn 0.3s var(--ease) forwards;
-    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="page-layout">
 
-    <!-- ── Header ──────────────────────────────────── -->
-    <header class="header">
-      <div class="header-left">
-        <svg id="logo-dark" class="logo" enable-background="new 0 0 1466.1 699.15" viewBox="0 0 1466.1 699.15" xmlns="http://www.w3.org/2000/svg" style="display:none"><path d="m1168.42 233.05c-13.36 0-26.18 5.31-35.63 14.76l-140 140c-11.49 11.49-26.77 17.82-43.03 17.82s-31.53-6.33-43.03-17.82l-107.98-107.98c-30.17-30.17-70.28-46.78-112.95-46.78h-333.37c-63.1 0-116.92 48.98-119.3 112.03-2.5 66.29 50.7 121.02 116.44 121.02h388.1l-45.61-45.61c-9.51-9.51-22.41-14.85-35.86-14.85h-304.98c-29.18 0-54.72-21.61-57.45-50.66-3.14-33.33 23.11-61.46 55.8-61.46h336.23c26.33 0 51.58 10.46 70.2 29.08l106.19 106.19c22.22 22.22 51.81 36.15 83.22 37.24 34.02 1.18 66.2-11.52 90.13-35.46l197.51-197.51h-64.63z" fill="#fff"/></svg>
-        <svg id="logo-light" class="logo" enable-background="new 0 0 1466.1 699.15" viewBox="0 0 1466.1 699.15" xmlns="http://www.w3.org/2000/svg" style="display:none"><path d="m1168.42 233.05c-13.36 0-26.18 5.31-35.63 14.76l-140 140c-11.49 11.49-26.77 17.82-43.03 17.82s-31.53-6.33-43.03-17.82l-107.98-107.98c-30.17-30.17-70.28-46.78-112.95-46.78h-333.37c-63.1 0-116.92 48.98-119.3 112.03-2.5 66.29 50.7 121.02 116.44 121.02h388.1l-45.61-45.61c-9.51-9.51-22.41-14.85-35.86-14.85h-304.98c-29.18 0-54.72-21.61-57.45-50.66-3.14-33.33 23.11-61.46 55.8-61.46h336.23c26.33 0 51.58 10.46 70.2 29.08l106.19 106.19c22.22 22.22 51.81 36.15 83.22 37.24 34.02 1.18 66.2-11.52 90.13-35.46l197.51-197.51h-64.63z" fill="#000"/></svg>
-        <span class="header-title">Data Classification Tool</span>
+    <!-- ── Mini Decision Tree (sticky sidebar) ──────── -->
+    <nav class="minimap" id="minimap">
+      <div class="minimap-title">Decision Tree</div>
+      <div class="minimap-tree">
+        <a class="minimap-node active" data-target="sec-define" href="#sec-define" onclick="scrollToSection(event, 'sec-define')">
+          <span class="minimap-dot"></span> Name Dataset
+        </a>
+        <div class="minimap-line" id="mline-1"></div>
+        <a class="minimap-node" data-target="sec-pii" href="#sec-pii" onclick="scrollToSection(event, 'sec-pii')">
+          <span class="minimap-dot"></span> Contains PII?
+        </a>
+        <div class="minimap-line" id="mline-2"></div>
+        <a class="minimap-node" data-target="sec-gdpr" href="#sec-gdpr" onclick="scrollToSection(event, 'sec-gdpr')">
+          <span class="minimap-dot"></span> GDPR Categories
+        </a>
+        <div class="minimap-line" id="mline-3"></div>
+        <a class="minimap-node" data-target="sec-conf" href="#sec-conf" onclick="scrollToSection(event, 'sec-conf')">
+          <span class="minimap-dot"></span> Confidentiality
+        </a>
+        <div class="minimap-line" id="mline-4"></div>
+        <a class="minimap-node" data-target="sec-ia" href="#sec-ia" onclick="scrollToSection(event, 'sec-ia')">
+          <span class="minimap-dot"></span> Integrity & Avail.
+        </a>
+        <div class="minimap-line" id="mline-5"></div>
+        <a class="minimap-node" data-target="sec-result" href="#sec-result" onclick="scrollToSection(event, 'sec-result')">
+          <span class="minimap-dot"></span> Result
+        </a>
       </div>
-      <div class="header-right">
-        <button class="print-btn" onclick="window.print()" title="Print / Save as PDF">
-          <span>🖨</span> Print
-        </button>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
-          <span id="theme-icon">☀</span>
-        </button>
-      </div>
-    </header>
+    </nav>
 
-    <!-- ── Progress ─────────────────────────────────── -->
-    <div class="progress-container">
-      <div class="progress-steps">
-        <div class="progress-step active" data-step="1">
-          <div class="progress-dot">1</div>
-          <div class="progress-label">Confidentiality</div>
-        </div>
-        <div class="progress-step" data-step="2">
-          <div class="progress-dot">2</div>
-          <div class="progress-label">Integrity & Availability</div>
-        </div>
-        <div class="progress-step" data-step="3">
-          <div class="progress-dot">3</div>
-          <div class="progress-label">GDPR</div>
-        </div>
-        <div class="progress-step" data-step="4">
-          <div class="progress-dot">4</div>
-          <div class="progress-label">Result</div>
-        </div>
-      </div>
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progress-fill"></div>
-      </div>
-    </div>
+    <!-- ── Main Content ────────────────────────────── -->
+    <div class="main-content">
 
-    <!-- ── Step 1: Confidentiality ──────────────────── -->
-    <div class="step active" id="step-1">
-      <div class="card">
-        <div class="card-title">Confidentiality</div>
-        <div class="card-subtitle">How sensitive is this data if disclosed to unauthorised parties?</div>
-
-        <button class="guidance-toggle" onclick="toggleGuidance(this)">
-          <span class="arrow">▶</span> Classification Guidance
-        </button>
-        <div class="guidance-content" id="guidance-c">
-          <table class="guidance-table">
-            <thead><tr><th>Level</th><th>Description</th><th>Example</th></tr></thead>
-            <tbody>
-              <tr><td><strong>Low</strong></td><td>Public information with no impact if disclosed</td><td>Published marketing materials, public website content</td></tr>
-              <tr><td><strong>Medium</strong></td><td>Internal information, limited impact if disclosed</td><td>Internal policies, org charts, non-sensitive emails</td></tr>
-              <tr><td><strong>Medium-High</strong></td><td>Sensitive internal data, moderate business impact</td><td>Financial forecasts, strategic plans, HR data</td></tr>
-              <tr><td><strong>High</strong></td><td>Highly confidential, significant harm if disclosed</td><td>Client PII, trade secrets, M&A data</td></tr>
-              <tr><td><strong>Critical</strong></td><td>Extremely sensitive, severe or irreversible damage</td><td>Encryption keys, special category personal data, legal privileged</td></tr>
-            </tbody>
-          </table>
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <svg id="logo-dark" class="logo" enable-background="new 0 0 1466.1 699.15" viewBox="0 0 1466.1 699.15" xmlns="http://www.w3.org/2000/svg" style="display:none"><path d="m1168.42 233.05c-13.36 0-26.18 5.31-35.63 14.76l-140 140c-11.49 11.49-26.77 17.82-43.03 17.82s-31.53-6.33-43.03-17.82l-107.98-107.98c-30.17-30.17-70.28-46.78-112.95-46.78h-333.37c-63.1 0-116.92 48.98-119.3 112.03-2.5 66.29 50.7 121.02 116.44 121.02h388.1l-45.61-45.61c-9.51-9.51-22.41-14.85-35.86-14.85h-304.98c-29.18 0-54.72-21.61-57.45-50.66-3.14-33.33 23.11-61.46 55.8-61.46h336.23c26.33 0 51.58 10.46 70.2 29.08l106.19 106.19c22.22 22.22 51.81 36.15 83.22 37.24 34.02 1.18 66.2-11.52 90.13-35.46l197.51-197.51h-64.63z" fill="#fff"/></svg>
+          <svg id="logo-light" class="logo" enable-background="new 0 0 1466.1 699.15" viewBox="0 0 1466.1 699.15" xmlns="http://www.w3.org/2000/svg" style="display:none"><path d="m1168.42 233.05c-13.36 0-26.18 5.31-35.63 14.76l-140 140c-11.49 11.49-26.77 17.82-43.03 17.82s-31.53-6.33-43.03-17.82l-107.98-107.98c-30.17-30.17-70.28-46.78-112.95-46.78h-333.37c-63.1 0-116.92 48.98-119.3 112.03-2.5 66.29 50.7 121.02 116.44 121.02h388.1l-45.61-45.61c-9.51-9.51-22.41-14.85-35.86-14.85h-304.98c-29.18 0-54.72-21.61-57.45-50.66-3.14-33.33 23.11-61.46 55.8-61.46h336.23c26.33 0 51.58 10.46 70.2 29.08l106.19 106.19c22.22 22.22 51.81 36.15 83.22 37.24 34.02 1.18 66.2-11.52 90.13-35.46l197.51-197.51h-64.63z" fill="#000"/></svg>
+          <span class="header-title">Dataset Classification Tool</span>
         </div>
+        <div class="header-right">
+          <button class="screenshot-btn" id="screenshot-btn" onclick="takeScreenshot()" title="Capture full page as image">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M3 9h2M19 9h2M9 3v2M9 19v2M15 3v2M15 19v2"/></svg>
+            Screenshot
+          </button>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+            <span id="theme-icon">&#x2600;</span>
+          </button>
+        </div>
+      </header>
 
-        <div class="options-group" id="conf-options">
-          <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'low')">
-            <input type="radio" name="confidentiality" value="low">
-            <div class="option-text"><strong>Low</strong><span>Public — no impact if disclosed</span></div>
-          </label>
-          <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'medium')">
-            <input type="radio" name="confidentiality" value="medium">
-            <div class="option-text"><strong>Medium</strong><span>Internal — limited business impact</span></div>
-          </label>
-          <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'medium-high')">
-            <input type="radio" name="confidentiality" value="medium-high">
-            <div class="option-text"><strong>Medium-High</strong><span>Sensitive internal — moderate business impact</span></div>
-          </label>
-          <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'high')">
-            <input type="radio" name="confidentiality" value="high">
-            <div class="option-text"><strong>High</strong><span>Confidential — significant harm if disclosed</span></div>
-          </label>
-          <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'critical')">
-            <input type="radio" name="confidentiality" value="critical">
-            <div class="option-text"><strong>Critical</strong><span>Restricted — severe or irreversible damage</span></div>
-          </label>
+      <!-- ── Section 1: Name Dataset ──────────────── -->
+      <div class="section" id="sec-define">
+        <div class="card">
+          <div class="card-title">Name Your Dataset</div>
+          <div class="card-subtitle">Name the dataset you are classifying. This name will appear in the final documentation.</div>
+
+          <div class="definition-box">
+            <strong>What is a dataset?</strong> A dataset is any structured or unstructured collection of information that is processed, stored, or transmitted by the organisation — including databases, spreadsheets, file shares, application data, backups, and logs. Under GDPR Art. 4(1), any dataset containing information relating to an identified or identifiable natural person constitutes personal data processing.
+          </div>
+
+          <input type="text" class="dataset-name-input" id="dataset-name" placeholder="e.g. Employee Payroll Records, Client CRM Export, Website Analytics..." oninput="onNameChange()">
         </div>
       </div>
 
-      <div class="nav-buttons">
-        <div></div>
-        <button class="btn btn-primary" id="next-1" disabled onclick="goToStep(2)">Next →</button>
-      </div>
-    </div>
+      <!-- ── Section 2: PII Check ──────────────────── -->
+      <div class="section section-locked" id="sec-pii">
+        <div class="card">
+          <div class="card-title">Does this dataset contain any PII?</div>
+          <div class="card-subtitle">Personally Identifiable Information (PII) is any data that could directly or indirectly identify a natural person — names, email addresses, IP addresses, financial records, health data, etc.</div>
 
-    <!-- ── Step 2: Integrity & Availability ─────────── -->
-    <div class="step" id="step-2">
-      <div class="card">
-        <div class="card-title">Integrity & Availability</div>
-        <div class="card-subtitle">Assess the impact of unauthorised modification and service disruption.</div>
-
-        <button class="guidance-toggle" onclick="toggleGuidance(this)">
-          <span class="arrow">▶</span> Classification Guidance
-        </button>
-        <div class="guidance-content" id="guidance-ia">
-          <table class="guidance-table">
-            <thead><tr><th>Level</th><th>Integrity Impact</th><th>Availability Impact</th></tr></thead>
-            <tbody>
-              <tr><td><strong>Low</strong></td><td>Minor errors tolerable, easily corrected</td><td>Downtime has minimal operational impact</td></tr>
-              <tr><td><strong>Medium</strong></td><td>Errors cause moderate disruption, rework required</td><td>Downtime disrupts some business functions</td></tr>
-              <tr><td><strong>High</strong></td><td>Errors cause significant harm or compliance breach</td><td>Downtime causes significant operational or financial impact</td></tr>
-              <tr><td><strong>Critical</strong></td><td>Errors cause severe, potentially irreversible harm</td><td>Downtime is unacceptable — life safety or major financial loss</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="dual-column">
-          <div>
-            <div class="column-title">Integrity</div>
-            <div class="column-subtitle">Impact if data is modified without authorisation</div>
-            <div class="options-group" id="int-options">
-              <label class="option-label" onclick="selectRadio(this, 'integrity', 'low')">
-                <input type="radio" name="integrity" value="low">
-                <div class="option-text"><strong>Low</strong><span>Minor errors tolerable</span></div>
-              </label>
-              <label class="option-label" onclick="selectRadio(this, 'integrity', 'medium')">
-                <input type="radio" name="integrity" value="medium">
-                <div class="option-text"><strong>Medium</strong><span>Moderate disruption</span></div>
-              </label>
-              <label class="option-label" onclick="selectRadio(this, 'integrity', 'high')">
-                <input type="radio" name="integrity" value="high">
-                <div class="option-text"><strong>High</strong><span>Significant harm</span></div>
-              </label>
-              <label class="option-label" onclick="selectRadio(this, 'integrity', 'critical')">
-                <input type="radio" name="integrity" value="critical">
-                <div class="option-text"><strong>Critical</strong><span>Severe, irreversible harm</span></div>
-              </label>
+          <div class="pii-toggle">
+            <div class="pii-option" onclick="selectPII(true)">
+              <span>Yes</span> — Contains personal data
+            </div>
+            <div class="pii-option" onclick="selectPII(false)">
+              <span>No</span> — No personal data
             </div>
           </div>
-          <div>
-            <div class="column-title">Availability</div>
-            <div class="column-subtitle">Impact if data or service is unavailable</div>
-            <div class="options-group" id="avail-options">
-              <label class="option-label" onclick="selectRadio(this, 'availability', 'low')">
-                <input type="radio" name="availability" value="low">
-                <div class="option-text"><strong>Low</strong><span>Minimal operational impact</span></div>
+        </div>
+      </div>
+
+      <!-- ── Section 2b: GDPR Categories (conditional) ── -->
+      <div class="gdpr-section-wrapper" id="gdpr-wrapper">
+        <div class="section" id="sec-gdpr">
+          <div class="card">
+            <div class="card-title">GDPR Data Categories</div>
+            <div class="card-subtitle">Select all personal data categories that apply to this dataset.</div>
+
+            <div class="gdpr-grid" id="gdpr-options">
+              <label class="option-label" onclick="selectCheckbox(this, 'personal')">
+                <input type="checkbox" name="gdpr" value="personal">
+                <div class="option-text">
+                  <strong>Personal Data</strong>
+                  <span>Art. 4(1) — Any data relating to an identifiable person</span>
+                  <span class="option-example">e.g. Names, emails, phone numbers, employee IDs</span>
+                </div>
               </label>
-              <label class="option-label" onclick="selectRadio(this, 'availability', 'medium')">
-                <input type="radio" name="availability" value="medium">
-                <div class="option-text"><strong>Medium</strong><span>Some functions disrupted</span></div>
+              <label class="option-label" onclick="selectCheckbox(this, 'special')">
+                <input type="checkbox" name="gdpr" value="special">
+                <div class="option-text">
+                  <strong>Special Category</strong>
+                  <span>Art. 9 — Health, biometric, racial, political, etc.</span>
+                  <span class="option-example">e.g. Medical records, ethnicity fields, trade union membership</span>
+                </div>
               </label>
-              <label class="option-label" onclick="selectRadio(this, 'availability', 'high')">
-                <input type="radio" name="availability" value="high">
-                <div class="option-text"><strong>High</strong><span>Significant operational impact</span></div>
+              <label class="option-label" onclick="selectCheckbox(this, 'children')">
+                <input type="checkbox" name="gdpr" value="children">
+                <div class="option-text">
+                  <strong>Children's Data</strong>
+                  <span>Art. 8 — Data relating to persons under 18</span>
+                  <span class="option-example">e.g. Student records, parental consent forms</span>
+                </div>
               </label>
-              <label class="option-label" onclick="selectRadio(this, 'availability', 'critical')">
-                <input type="radio" name="availability" value="critical">
-                <div class="option-text"><strong>Critical</strong><span>Unacceptable — life safety risk</span></div>
+              <label class="option-label" onclick="selectCheckbox(this, 'financial')">
+                <input type="checkbox" name="gdpr" value="financial">
+                <div class="option-text">
+                  <strong>Financial Data</strong>
+                  <span>Art. 5(f) — Bank details, payment records, salary</span>
+                  <span class="option-example">e.g. Payroll data, invoices with bank details, expenses</span>
+                </div>
+              </label>
+              <label class="option-label" onclick="selectCheckbox(this, 'criminal')">
+                <input type="checkbox" name="gdpr" value="criminal">
+                <div class="option-text">
+                  <strong>Criminal Records</strong>
+                  <span>Art. 10 — Criminal offences or conviction data</span>
+                  <span class="option-example">e.g. Background check results, DBS records</span>
+                </div>
               </label>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="nav-buttons">
-        <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
-        <button class="btn btn-primary" id="next-2" disabled onclick="goToStep(3)">Next →</button>
+      <div class="section-divider" id="divider-cia">CIA Assessment</div>
+
+      <!-- ── Section 3: Confidentiality ────────────── -->
+      <div class="section section-locked" id="sec-conf">
+        <div class="card">
+          <div class="card-title">Confidentiality</div>
+          <div class="card-subtitle">How sensitive is this dataset if disclosed to unauthorised parties?</div>
+
+          <div class="options-group" id="conf-options">
+            <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'low')">
+              <input type="radio" name="confidentiality" value="low">
+              <div class="option-text">
+                <strong>Low</strong>
+                <span>Public — no impact if disclosed</span>
+                <span class="option-example">e.g. Public website content, marketing brochures</span>
+              </div>
+            </label>
+            <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'medium')">
+              <input type="radio" name="confidentiality" value="medium">
+              <div class="option-text">
+                <strong>Medium</strong>
+                <span>Internal — limited business impact</span>
+                <span class="option-example">e.g. Internal policies, org charts, meeting notes</span>
+              </div>
+            </label>
+            <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'medium-high')">
+              <input type="radio" name="confidentiality" value="medium-high">
+              <div class="option-text">
+                <strong>Medium-High</strong>
+                <span>Sensitive internal — moderate business impact</span>
+                <span class="option-example">e.g. Financial forecasts, strategic plans, HR data</span>
+              </div>
+            </label>
+            <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'high')">
+              <input type="radio" name="confidentiality" value="high">
+              <div class="option-text">
+                <strong>High</strong>
+                <span>Confidential — significant harm if disclosed</span>
+                <span class="option-example">e.g. Client PII, trade secrets, M&amp;A data</span>
+              </div>
+            </label>
+            <label class="option-label" onclick="selectRadio(this, 'confidentiality', 'critical')">
+              <input type="radio" name="confidentiality" value="critical">
+              <div class="option-text">
+                <strong>Critical</strong>
+                <span>Restricted — severe or irreversible damage</span>
+                <span class="option-example">e.g. Personally identifiable data (PII) or encryption keys</span>
+              </div>
+            </label>
+          </div>
+        </div>
       </div>
+
+      <!-- ── Section 4: Integrity & Availability ───── -->
+      <div class="section section-locked" id="sec-ia">
+        <div class="card">
+          <div class="card-title">Integrity &amp; Availability</div>
+          <div class="card-subtitle">Assess the impact of unauthorised modification and service disruption to this dataset.</div>
+
+          <div class="dual-column">
+            <div>
+              <div class="column-title">Integrity</div>
+              <div class="column-subtitle">Impact if dataset is modified without authorisation</div>
+              <div class="options-group" id="int-options">
+                <label class="option-label" onclick="selectRadio(this, 'integrity', 'low')">
+                  <input type="radio" name="integrity" value="low">
+                  <div class="option-text">
+                    <strong>Low</strong>
+                    <span>Minor errors tolerable</span>
+                    <span class="option-example">e.g. Draft documents, internal wikis</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'integrity', 'medium')">
+                  <input type="radio" name="integrity" value="medium">
+                  <div class="option-text">
+                    <strong>Medium</strong>
+                    <span>Moderate disruption</span>
+                    <span class="option-example">e.g. Project timelines, internal reports</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'integrity', 'high')">
+                  <input type="radio" name="integrity" value="high">
+                  <div class="option-text">
+                    <strong>High</strong>
+                    <span>Significant harm or compliance breach</span>
+                    <span class="option-example">e.g. Financial records, audit logs</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'integrity', 'critical')">
+                  <input type="radio" name="integrity" value="critical">
+                  <div class="option-text">
+                    <strong>Critical</strong>
+                    <span>Severe, irreversible harm</span>
+                    <span class="option-example">e.g. Legal evidence, safety-critical systems</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div>
+              <div class="column-title">Availability</div>
+              <div class="column-subtitle">Impact if dataset or service is unavailable</div>
+              <div class="options-group" id="avail-options">
+                <label class="option-label" onclick="selectRadio(this, 'availability', 'low')">
+                  <input type="radio" name="availability" value="low">
+                  <div class="option-text">
+                    <strong>Low</strong>
+                    <span>Minimal operational impact</span>
+                    <span class="option-example">e.g. Archived data, reference docs</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'availability', 'medium')">
+                  <input type="radio" name="availability" value="medium">
+                  <div class="option-text">
+                    <strong>Medium</strong>
+                    <span>Some functions disrupted</span>
+                    <span class="option-example">e.g. CRM data, email systems</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'availability', 'high')">
+                  <input type="radio" name="availability" value="high">
+                  <div class="option-text">
+                    <strong>High</strong>
+                    <span>Significant operational impact</span>
+                    <span class="option-example">e.g. ERP systems, client-facing platforms</span>
+                  </div>
+                </label>
+                <label class="option-label" onclick="selectRadio(this, 'availability', 'critical')">
+                  <input type="radio" name="availability" value="critical">
+                  <div class="option-text">
+                    <strong>Critical</strong>
+                    <span>Unacceptable — life safety risk</span>
+                    <span class="option-example">e.g. Emergency services, medical systems</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Generate Button ───────────────────────── -->
+      <div class="generate-section" id="generate-section">
+        <button class="btn-generate" id="btn-generate" disabled onclick="generateResults()">Generate Classification</button>
+        <br>
+        <button class="btn-reset" onclick="resetWizard()">&#x21BA; Start Over</button>
+      </div>
+
+      <!-- ── Section 5: Result ─────────────────────── -->
+      <div class="result-section" id="sec-result">
+        <div class="card">
+          <div class="card-title" id="result-title">Classification Result</div>
+          <div class="card-subtitle" id="result-subtitle">Based on your selections, this dataset should be classified as follows.</div>
+
+          <div class="result-overall">
+            <div class="result-overall-label">Overall Classification</div>
+            <div class="result-badge" id="result-badge">—</div>
+          </div>
+
+          <div class="result-cia-grid">
+            <div class="cia-card">
+              <div class="cia-card-label">Confidentiality</div>
+              <div class="cia-card-value" id="result-c">—</div>
+            </div>
+            <div class="cia-card">
+              <div class="cia-card-label">Integrity</div>
+              <div class="cia-card-value" id="result-i">—</div>
+            </div>
+            <div class="cia-card">
+              <div class="cia-card-label">Availability</div>
+              <div class="cia-card-value" id="result-a">—</div>
+            </div>
+          </div>
+
+          <div class="gdpr-flags">
+            <div class="gdpr-flags-title">GDPR Data Categories</div>
+            <div class="gdpr-flag-list" id="result-gdpr"></div>
+          </div>
+
+          <div class="iso-section">
+            <div class="iso-title">Applicable ISO 27001 Controls &amp; Rules Applied</div>
+            <table class="iso-table">
+              <thead><tr><th>Control</th><th>Reference</th><th>Rule Applied</th></tr></thead>
+              <tbody id="result-iso"></tbody>
+            </table>
+          </div>
+
+          <!-- Markdown Documentation Output -->
+          <div class="doc-output">
+            <div class="doc-output-header">
+              <div class="doc-output-title">Documentation Template</div>
+              <button class="btn-copy" id="btn-copy" onclick="copyMarkdown()">Copy Markdown</button>
+            </div>
+            <div class="doc-markdown" id="doc-markdown"></div>
+          </div>
+
+          <!-- Links -->
+          <div class="links-section">
+            <div class="links-title">Important Links</div>
+            <div class="links-grid">
+              <a class="link-item" href="https://www.isms.online/iso-27001/annex-a-2022/5-12-classification-of-information-2022/" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span> ISO 27001 — Classification of Information
+              </a>
+              <a class="link-item" href="https://gdpr-info.eu/" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg></span> GDPR Full Text
+              </a>
+              <a class="link-item" href="https://cvcnetworkltd.sharepoint.com/sites/CV-Handbook/SitePages/Data-Protection--Introduction.aspx" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/></svg></span> Internal Data Protection Policy
+              </a>
+              <a class="link-item" href="mailto:uk.privacy@cvglobal.co" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span> Data Protection Officer
+              </a>
+              <a class="link-item" href="https://www.enisa.europa.eu/topics/data-protection" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><path d="M12 2L4 7v5c0 5.25 3.4 10.15 8 11.25C16.6 22.15 20 17.25 20 12V7l-8-5Z"/><path d="M9 12l2 2 4-4"/></svg></span> ENISA Data Protection Guidelines
+              </a>
+              <a class="link-item" href="https://www.cvglobal.co/en/privacy-policy" target="_blank" rel="noopener">
+                <span class="link-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></span> CV Privacy Policy
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <p>CV Dataset Classification Tool &middot; Aligned to <a href="https://www.isms.online/iso-27001/annex-a-2022/5-12-classification-of-information-2022/" target="_blank" rel="noopener">ISO/IEC 27001:2022</a> &amp; <a href="https://gdpr-info.eu/" target="_blank" rel="noopener">GDPR (EU) 2016/679</a></p>
+        <p style="margin-top:0.3rem">Last updated: <span id="last-updated-date">5 March 2026</span> &middot; Client-side only — no data is transmitted</p>
+      </footer>
+
     </div>
-
-    <!-- ── Step 3: GDPR Categories ──────────────────── -->
-    <div class="step" id="step-3">
-      <div class="card">
-        <div class="card-title">GDPR Data Categories</div>
-        <div class="card-subtitle">Select all personal data categories that apply to this data asset. Select "No Personal Data" if none apply.</div>
-
-        <div class="gdpr-grid" id="gdpr-options">
-          <label class="option-label" onclick="selectCheckbox(this, 'personal')">
-            <input type="checkbox" name="gdpr" value="personal">
-            <div class="option-text"><strong>Personal Data</strong><span>Art. 4(1) — Any data relating to an identifiable person</span></div>
-          </label>
-          <label class="option-label" onclick="selectCheckbox(this, 'special')">
-            <input type="checkbox" name="gdpr" value="special">
-            <div class="option-text"><strong>Special Category</strong><span>Art. 9 — Health, biometric, racial, political, etc.</span></div>
-          </label>
-          <label class="option-label" onclick="selectCheckbox(this, 'children')">
-            <input type="checkbox" name="gdpr" value="children">
-            <div class="option-text"><strong>Children's Data</strong><span>Art. 8 — Data relating to persons under 18</span></div>
-          </label>
-          <label class="option-label" onclick="selectCheckbox(this, 'financial')">
-            <input type="checkbox" name="gdpr" value="financial">
-            <div class="option-text"><strong>Financial Data</strong><span>Art. 5(f) — Bank details, payment records, salary</span></div>
-          </label>
-          <label class="option-label" onclick="selectCheckbox(this, 'criminal')">
-            <input type="checkbox" name="gdpr" value="criminal">
-            <div class="option-text"><strong>Criminal Records</strong><span>Art. 10 — Criminal offences or conviction data</span></div>
-          </label>
-          <label class="option-label" onclick="selectCheckbox(this, 'none')">
-            <input type="checkbox" name="gdpr" value="none">
-            <div class="option-text"><strong>No Personal Data</strong><span>N/A — This data contains no personal information</span></div>
-          </label>
-        </div>
-      </div>
-
-      <div class="nav-buttons">
-        <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
-        <button class="btn btn-primary" id="next-3" disabled onclick="generateResults(); goToStep(4)">View Results →</button>
-      </div>
-    </div>
-
-    <!-- ── Step 4: Results ──────────────────────────── -->
-    <div class="step" id="step-4">
-      <div class="card">
-        <div class="card-title">Classification Result</div>
-        <div class="card-subtitle">Based on your selections, this data asset should be classified as follows.</div>
-
-        <!-- Overall Badge -->
-        <div class="result-overall">
-          <div class="result-overall-label">Overall Classification</div>
-          <div class="result-badge" id="result-badge">—</div>
-        </div>
-
-        <!-- CIA Cards -->
-        <div class="result-cia-grid">
-          <div class="cia-card">
-            <div class="cia-card-label">Confidentiality</div>
-            <div class="cia-card-value" id="result-c">—</div>
-          </div>
-          <div class="cia-card">
-            <div class="cia-card-label">Integrity</div>
-            <div class="cia-card-value" id="result-i">—</div>
-          </div>
-          <div class="cia-card">
-            <div class="cia-card-label">Availability</div>
-            <div class="cia-card-value" id="result-a">—</div>
-          </div>
-        </div>
-
-        <!-- GDPR Flags -->
-        <div class="gdpr-flags">
-          <div class="gdpr-flags-title">GDPR Data Categories</div>
-          <div class="gdpr-flag-list" id="result-gdpr"></div>
-        </div>
-
-        <!-- ISO Controls -->
-        <div class="iso-section">
-          <div class="iso-title">Applicable ISO 27001 Controls</div>
-          <table class="iso-table">
-            <thead><tr><th>Control</th><th>Reference</th><th>Trigger</th></tr></thead>
-            <tbody id="result-iso"></tbody>
-          </table>
-        </div>
-
-        <!-- Links -->
-        <div class="links-section">
-          <div class="links-title">Important Links</div>
-          <div class="links-grid">
-            <a class="link-item" href="https://www.isms.online/iso-27001/annex-a-2022/5-12-classification-of-information-2022/" target="_blank" rel="noopener">
-              <span class="link-icon">📋</span> ISO 27001 — Classification of Information
-            </a>
-            <a class="link-item" href="https://gdpr-info.eu/" target="_blank" rel="noopener">
-              <span class="link-icon">📜</span> GDPR Full Text
-            </a>
-            <a class="link-item" href="https://cvcnetworkltd.sharepoint.com/sites/CV-Handbook/SitePages/Data-Protection--Introduction.aspx" target="_blank" rel="noopener">
-              <span class="link-icon">🔒</span> Internal Data Protection Policy
-            </a>
-            <a class="link-item" href="mailto:uk.privacy@cvglobal.co" target="_blank" rel="noopener">
-              <span class="link-icon">👤</span> Data Protection Officer
-            </a>
-            <a class="link-item" href="https://www.enisa.europa.eu/topics/data-protection" target="_blank" rel="noopener">
-              <span class="link-icon">🛡</span> ENISA Data Protection Guidelines
-            </a>
-            <a class="link-item" href="https://www.cvglobal.co/en/privacy-policy" target="_blank" rel="noopener">
-              <span class="link-icon">🌐</span> CV Privacy Policy
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div class="nav-buttons">
-        <button class="btn btn-secondary" onclick="goToStep(3)">← Back</button>
-        <button class="btn btn-reset" onclick="resetWizard()">↺ Start Over</button>
-      </div>
-    </div>
-
-    <!-- ── Footer ──────────────────────────────────── -->
-    <footer class="footer">
-      <p>CV Data Classification Tool · Aligned to <a href="https://www.isms.online/iso-27001/annex-a-2022/5-12-classification-of-information-2022/" target="_blank" rel="noopener">ISO/IEC 27001:2022</a> &amp; <a href="https://gdpr-info.eu/" target="_blank" rel="noopener">GDPR (EU) 2016/679</a></p>
-      <p style="margin-top:0.3rem">Last updated: <span id="last-updated-date">5 March 2026</span> · Client-side only — no data is transmitted</p>
-    </footer>
-
   </div>
 
   <script>
     /* ── State ─────────────────────────────────────── */
     const state = {
+      datasetName: '',
+      hasPII: null,
       confidentiality: null,
       integrity: null,
       availability: null,
@@ -1123,8 +1323,6 @@
       'criminal': { label: 'Criminal Records', article: 'Art. 10' }
     };
 
-    let currentStep = 1;
-
     /* ── Theme ─────────────────────────────────────── */
     function initTheme() {
       const saved = sessionStorage.getItem('cv-theme');
@@ -1142,7 +1340,7 @@
     }
 
     function updateThemeUI(theme) {
-      document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀' : '🌙';
+      document.getElementById('theme-icon').innerHTML = theme === 'dark' ? '&#x2600;' : '&#x1F319;';
       document.getElementById('logo-dark').style.display = theme === 'dark' ? 'block' : 'none';
       document.getElementById('logo-light').style.display = theme === 'light' ? 'block' : 'none';
     }
@@ -1150,84 +1348,159 @@
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
     initTheme();
 
-    /* ── Navigation ────────────────────────────────── */
-    function goToStep(step) {
-      document.getElementById('step-' + currentStep).classList.remove('active');
-      document.getElementById('step-' + step).classList.add('active');
+    /* ── Dataset Name ──────────────────────────────── */
+    function onNameChange() {
+      state.datasetName = document.getElementById('dataset-name').value.trim();
+      unlockSections();
+      updateMinimap();
+    }
 
-      document.querySelectorAll('.progress-step').forEach((el, i) => {
-        const s = i + 1;
-        el.classList.remove('active', 'completed');
-        if (s === step) el.classList.add('active');
-        else if (s < step) el.classList.add('completed');
-      });
+    /* ── PII Selection ─────────────────────────────── */
+    function selectPII(hasPII) {
+      state.hasPII = hasPII;
 
-      const fill = ((step - 1) / 3) * 100;
-      document.getElementById('progress-fill').style.width = fill + '%';
+      document.querySelectorAll('.pii-option').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
 
-      currentStep = step;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const gdprWrapper = document.getElementById('gdpr-wrapper');
+      if (hasPII) {
+        gdprWrapper.classList.add('visible');
+        state.gdpr.clear();
+      } else {
+        gdprWrapper.classList.remove('visible');
+        state.gdpr.clear();
+        state.gdpr.add('none');
+        // Clear GDPR checkbox selections
+        document.querySelectorAll('#gdpr-options .option-label').forEach(l => {
+          l.classList.remove('selected');
+          l.querySelector('input').checked = false;
+        });
+      }
+
+      unlockSections();
+      updateMinimap();
     }
 
     /* ── Radio Selection ───────────────────────────── */
     function selectRadio(label, field, value) {
       state[field] = value;
-
       const parent = label.closest('.options-group');
       parent.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
       label.classList.add('selected');
       label.querySelector('input').checked = true;
-
-      updateNextButtons();
+      unlockSections();
+      updateMinimap();
     }
 
-    /* ── Checkbox Selection ────────────────────────── */
+    /* ── GDPR Checkbox Selection ───────────────────── */
     function selectCheckbox(label, value) {
       const input = label.querySelector('input');
 
-      if (value === 'none') {
-        // Deselect all others
-        state.gdpr.clear();
-        state.gdpr.add('none');
-        document.querySelectorAll('#gdpr-options .option-label').forEach(l => {
-          l.classList.remove('selected');
-          l.querySelector('input').checked = false;
-        });
+      if (state.gdpr.has(value)) {
+        state.gdpr.delete(value);
+        label.classList.remove('selected');
+        input.checked = false;
+      } else {
+        state.gdpr.add(value);
         label.classList.add('selected');
         input.checked = true;
-      } else {
-        // Deselect "none" if selecting a real category
-        state.gdpr.delete('none');
-        const noneLabel = document.querySelector('#gdpr-options .option-label:last-child');
-        noneLabel.classList.remove('selected');
-        noneLabel.querySelector('input').checked = false;
-
-        if (state.gdpr.has(value)) {
-          state.gdpr.delete(value);
-          label.classList.remove('selected');
-          input.checked = false;
-        } else {
-          state.gdpr.add(value);
-          label.classList.add('selected');
-          input.checked = true;
-        }
       }
 
-      updateNextButtons();
+      unlockSections();
+      updateMinimap();
     }
 
-    /* ── Button State ──────────────────────────────── */
-    function updateNextButtons() {
-      document.getElementById('next-1').disabled = !state.confidentiality;
-      document.getElementById('next-2').disabled = !(state.integrity && state.availability);
-      document.getElementById('next-3').disabled = state.gdpr.size === 0;
+    /* ── Progressive Unlock ────────────────────────── */
+    function unlockSections() {
+      const piiSection = document.getElementById('sec-pii');
+      const confSection = document.getElementById('sec-conf');
+      const iaSection = document.getElementById('sec-ia');
+      const genBtn = document.getElementById('btn-generate');
+
+      // Unlock PII section when name is entered
+      if (state.datasetName.length > 0) {
+        piiSection.classList.remove('section-locked');
+      } else {
+        piiSection.classList.add('section-locked');
+      }
+
+      // Unlock CIA sections when PII is answered (and GDPR selected if PII=yes)
+      const piiAnswered = state.hasPII !== null;
+      const gdprOk = state.hasPII === false || (state.hasPII === true && state.gdpr.size > 0);
+
+      if (piiAnswered && gdprOk) {
+        confSection.classList.remove('section-locked');
+      } else {
+        confSection.classList.add('section-locked');
+      }
+
+      if (state.confidentiality) {
+        iaSection.classList.remove('section-locked');
+      } else {
+        iaSection.classList.add('section-locked');
+      }
+
+      // Enable generate button
+      const allComplete = state.datasetName.length > 0 &&
+        piiAnswered && gdprOk &&
+        state.confidentiality &&
+        state.integrity &&
+        state.availability;
+
+      genBtn.disabled = !allComplete;
     }
 
-    /* ── Guidance Toggle ───────────────────────────── */
-    function toggleGuidance(btn) {
-      const content = btn.nextElementSibling;
-      btn.classList.toggle('open');
-      content.classList.toggle('open');
+    /* ── Minimap Updates ───────────────────────────── */
+    function updateMinimap() {
+      const nodes = document.querySelectorAll('.minimap-node');
+      const lines = document.querySelectorAll('.minimap-line');
+
+      // Reset all
+      nodes.forEach(n => { n.classList.remove('active', 'completed'); });
+      lines.forEach(l => { l.classList.remove('completed'); });
+
+      const gdprOk = state.hasPII === false || (state.hasPII === true && state.gdpr.size > 0);
+
+      // Determine completed states
+      const steps = [
+        state.datasetName.length > 0,                    // Define
+        state.hasPII !== null,                            // PII
+        state.hasPII === false || (state.hasPII === true && state.gdpr.size > 0), // GDPR
+        !!state.confidentiality,                          // Conf
+        !!(state.integrity && state.availability),        // I&A
+        document.getElementById('sec-result').classList.contains('visible') // Result
+      ];
+
+      // Find current active (first incomplete)
+      let activeIdx = steps.findIndex(s => !s);
+      if (activeIdx === -1) activeIdx = 5;
+
+      nodes.forEach((node, i) => {
+        if (i < activeIdx) node.classList.add('completed');
+        else if (i === activeIdx) node.classList.add('active');
+      });
+
+      lines.forEach((line, i) => {
+        if (i < activeIdx) line.classList.add('completed');
+      });
+
+      // Hide GDPR node if PII = No
+      const gdprNode = document.querySelector('[data-target="sec-gdpr"]');
+      const gdprLine = document.getElementById('mline-2');
+      if (state.hasPII === false) {
+        gdprNode.style.display = 'none';
+        gdprLine.style.display = 'none';
+      } else {
+        gdprNode.style.display = '';
+        gdprLine.style.display = '';
+      }
+    }
+
+    /* ── Scroll to Section ─────────────────────────── */
+    function scrollToSection(e, id) {
+      e.preventDefault();
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     /* ── Generate Results ──────────────────────────── */
@@ -1235,6 +1508,11 @@
       const c = state.confidentiality;
       const i = state.integrity;
       const a = state.availability;
+      const name = state.datasetName || 'Unnamed Dataset';
+
+      // Title
+      document.getElementById('result-title').textContent = 'Classification: ' + name;
+      document.getElementById('result-subtitle').textContent = 'Based on your selections, this dataset should be classified as follows.';
 
       // CIA display
       document.getElementById('result-c').textContent = formatLevel(c);
@@ -1244,7 +1522,7 @@
       document.getElementById('result-a').textContent = formatLevel(a);
       document.getElementById('result-a').className = 'cia-card-value ' + a;
 
-      // Overall = max
+      // Overall
       const overall = getMax(c, i, a);
       const badge = document.getElementById('result-badge');
       badge.textContent = overallLabels[overall];
@@ -1253,25 +1531,91 @@
       // GDPR flags
       const gdprContainer = document.getElementById('result-gdpr');
       gdprContainer.innerHTML = '';
-      if (state.gdpr.has('none') || state.gdpr.size === 0) {
-        gdprContainer.innerHTML = '<span class="no-gdpr">No personal data categories selected</span>';
+      const hasGdpr = state.hasPII && state.gdpr.size > 0;
+      if (!hasGdpr) {
+        gdprContainer.innerHTML = '<span class="no-gdpr">No personal data — GDPR controls not applicable</span>';
       } else {
         state.gdpr.forEach(cat => {
-          if (cat === 'none') return;
           const info = gdprLabels[cat];
-          gdprContainer.innerHTML += '<span class="gdpr-flag"><span class="dot"></span>' + info.article + ' — ' + info.label + '</span>';
+          if (info) {
+            gdprContainer.innerHTML += '<span class="gdpr-flag"><span class="dot"></span>' + info.article + ' \u2014 ' + info.label + '</span>';
+          }
         });
       }
 
       // ISO controls
       const isoBody = document.getElementById('result-iso');
       isoBody.innerHTML = '';
-      const controls = getISOControls(c, i, a, state.gdpr);
+      const controls = getISOControls(c, i, a, state.gdpr, state.hasPII);
       controls.forEach(ctrl => {
         isoBody.innerHTML += '<tr><td>' + ctrl.name + '</td><td><span class="annex-tag">' + ctrl.ref + '</span></td><td>' + ctrl.trigger + '</td></tr>';
       });
+
+      // Generate markdown documentation
+      generateMarkdown(name, overall, c, i, a, controls);
+
+      // Show result section
+      document.getElementById('sec-result').classList.add('visible');
+      updateMinimap();
+
+      setTimeout(() => {
+        document.getElementById('sec-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
 
+    /* ── Markdown Generator ────────────────────────── */
+    function generateMarkdown(name, overall, c, i, a, controls) {
+      const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const label = overallLabels[overall];
+
+      let md = '## Dataset: ' + name + '\n';
+      md += '**Classification:** ' + label + '\n';
+      md += '**Date Classified:** ' + date + '\n\n';
+
+      md += '### CIA Assessment\n';
+      md += '| Dimension | Level |\n';
+      md += '|-----------|-------|\n';
+      md += '| Confidentiality | ' + formatLevel(c) + ' |\n';
+      md += '| Integrity | ' + formatLevel(i) + ' |\n';
+      md += '| Availability | ' + formatLevel(a) + ' |\n\n';
+
+      if (state.hasPII && state.gdpr.size > 0) {
+        md += '### GDPR Data Categories\n';
+        state.gdpr.forEach(cat => {
+          const info = gdprLabels[cat];
+          if (info) md += '- ' + info.label + ' (' + info.article + ')\n';
+        });
+        md += '\n';
+      }
+
+      md += '### Controls Applied\n';
+      md += '| Control | Reference | Rule |\n';
+      md += '|---------|-----------|------|\n';
+      controls.forEach(ctrl => {
+        md += '| ' + ctrl.name + ' | ' + ctrl.ref + ' | ' + ctrl.trigger + ' |\n';
+      });
+
+      md += '\n---\n';
+      md += '*Classified using the CV Dataset Classification Tool. Aligned to ISO/IEC 27001:2022 & GDPR (EU) 2016/679.*';
+
+      document.getElementById('doc-markdown').textContent = md;
+    }
+
+    /* ── Copy Markdown ─────────────────────────────── */
+    function copyMarkdown() {
+      const text = document.getElementById('doc-markdown').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy Markdown';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    /* ── Helpers ────────────────────────────────────── */
     function formatLevel(level) {
       if (level === 'medium-high') return 'Medium-High';
       return level.charAt(0).toUpperCase() + level.slice(1);
@@ -1290,47 +1634,38 @@
       return levelOrder.indexOf(level) >= levelOrder.indexOf(threshold);
     }
 
-    function getISOControls(c, i, a, gdpr) {
+    function getISOControls(c, i, a, gdpr, hasPII) {
       const controls = [];
 
-      // Always
       controls.push({ name: 'Information Classification', ref: 'A.8.2', trigger: 'Always applicable' });
 
-      // C >= medium
       if (levelGte(c, 'medium')) {
-        controls.push({ name: 'Information Labelling', ref: 'A.8.3', trigger: 'Confidentiality ≥ Medium' });
-        controls.push({ name: 'Access Control Policy', ref: 'A.9.1', trigger: 'Confidentiality ≥ Medium' });
+        controls.push({ name: 'Information Labelling', ref: 'A.8.3', trigger: 'Confidentiality \u2265 Medium' });
+        controls.push({ name: 'Access Control Policy', ref: 'A.9.1', trigger: 'Confidentiality \u2265 Medium' });
       }
 
-      // C = high or critical
       if (levelGte(c, 'high')) {
-        controls.push({ name: 'Cryptography', ref: 'A.8.24', trigger: 'Confidentiality ≥ High' });
+        controls.push({ name: 'Cryptography', ref: 'A.8.24', trigger: 'Confidentiality \u2265 High' });
       }
 
-      // I >= high
       if (levelGte(i, 'high')) {
-        controls.push({ name: 'Configuration Management', ref: 'A.8.9', trigger: 'Integrity ≥ High' });
+        controls.push({ name: 'Configuration Management', ref: 'A.8.9', trigger: 'Integrity \u2265 High' });
       }
 
-      // I = critical
       if (i === 'critical') {
         controls.push({ name: 'Logging and Monitoring', ref: 'A.8.15', trigger: 'Integrity = Critical' });
       }
 
-      // A >= high
       if (levelGte(a, 'high')) {
-        controls.push({ name: 'Information Backup', ref: 'A.8.13', trigger: 'Availability ≥ High' });
+        controls.push({ name: 'Information Backup', ref: 'A.8.13', trigger: 'Availability \u2265 High' });
       }
 
-      // A = critical
       if (a === 'critical') {
         controls.push({ name: 'Redundancy', ref: 'A.8.14', trigger: 'Availability = Critical' });
       }
 
-      // GDPR Art.32 if any personal data
-      const hasGdpr = gdpr.size > 0 && !gdpr.has('none');
-      if (hasGdpr) {
-        controls.push({ name: 'GDPR Art. 32 — Technical & Organisational Measures', ref: 'GDPR', trigger: 'Personal data selected' });
+      if (hasPII && gdpr.size > 0) {
+        controls.push({ name: 'GDPR Art. 32 \u2014 Technical & Organisational Measures', ref: 'GDPR', trigger: 'Dataset contains personal data' });
       }
 
       return controls;
@@ -1338,19 +1673,94 @@
 
     /* ── Reset ─────────────────────────────────────── */
     function resetWizard() {
+      state.datasetName = '';
+      state.hasPII = null;
       state.confidentiality = null;
       state.integrity = null;
       state.availability = null;
       state.gdpr.clear();
 
+      document.getElementById('dataset-name').value = '';
       document.querySelectorAll('.option-label').forEach(l => {
         l.classList.remove('selected');
-        l.querySelector('input').checked = false;
+        const inp = l.querySelector('input');
+        if (inp) inp.checked = false;
       });
+      document.querySelectorAll('.pii-option').forEach(el => el.classList.remove('selected'));
+      document.getElementById('gdpr-wrapper').classList.remove('visible');
+      document.getElementById('sec-result').classList.remove('visible');
 
-      updateNextButtons();
-      goToStep(1);
+      // Re-lock sections
+      document.getElementById('sec-pii').classList.add('section-locked');
+      document.getElementById('sec-conf').classList.add('section-locked');
+      document.getElementById('sec-ia').classList.add('section-locked');
+      document.getElementById('btn-generate').disabled = true;
+
+      updateMinimap();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    /* ── Screenshot (full-page capture via html2canvas CDN) ── */
+    function takeScreenshot() {
+      const btn = document.getElementById('screenshot-btn');
+      btn.classList.add('capturing');
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M3 9h2M19 9h2M9 3v2M9 19v2M15 3v2M15 19v2"/></svg> Capturing...';
+
+      // Load html2canvas if not already loaded
+      if (typeof html2canvas === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = () => doCapture(btn);
+        script.onerror = () => {
+          showToast('Failed to load capture library');
+          resetBtn(btn);
+        };
+        document.head.appendChild(script);
+      } else {
+        doCapture(btn);
+      }
+    }
+
+    function doCapture(btn) {
+      const target = document.querySelector('.main-content');
+      html2canvas(target, {
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('background-color'),
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth: target.scrollWidth,
+        windowHeight: target.scrollHeight
+      }).then(canvas => {
+        const link = document.createElement('a');
+        const name = (state.datasetName || 'dataset').replace(/[^a-zA-Z0-9]/g, '_');
+        link.download = 'classification_' + name + '.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+        showToast('Screenshot saved');
+        resetBtn(btn);
+      }).catch(() => {
+        showToast('Capture failed — try again');
+        resetBtn(btn);
+      });
+    }
+
+    function resetBtn(btn) {
+      btn.classList.remove('capturing');
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M3 9h2M19 9h2M9 3v2M9 19v2M15 3v2M15 19v2"/></svg> Screenshot';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('screenshot-toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // Initial minimap state
+    updateMinimap();
   </script>
+
+  <div class="screenshot-toast" id="screenshot-toast"></div>
 </body>
 </html>
