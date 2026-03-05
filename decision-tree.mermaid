@@ -1,0 +1,41 @@
+---
+title: CV Dataset Classification Tool — Decision Tree
+---
+flowchart TD
+    START["🏁 WHAT IS A DATASET?\n─────────────────\nA dataset is any structured or\nunstructured collection of information\nprocessed, stored, or transmitted\nby the organisation.\n(GDPR Art. 4(1))"]
+    START --> NAME
+
+    NAME["📝 NAME YOUR DATASET\n─────────────────\nEnter dataset name once.\nUsed in final documentation."]
+    NAME --> PII
+
+    PII{"Does this DATASET\ncontain any PII?"}
+
+    PII -->|"Yes"| GDPR_CAT
+    PII -->|"No"| CONF
+
+    GDPR_CAT["Select GDPR Categories\n─────────────────\n☐ Personal Data — Art. 4(1)\n☐ Special Category — Art. 9\n☐ Children's Data — Art. 8\n☐ Financial Data — Art. 5(f)\n☐ Criminal Records — Art. 10"]
+    GDPR_CAT --> CONF
+
+    CONF{"CONFIDENTIALITY\nHow sensitive if disclosed?\n─────────────────\nLow → e.g. Public website content\nMedium → e.g. Internal policies\nMedium-High → e.g. HR data\nHigh → e.g. Client PII\nCritical → e.g. Encryption keys"}
+    CONF --> INT
+
+    INT{"INTEGRITY\nImpact if modified\nwithout authorisation?\n─────────────────\nLow → e.g. Minor errors tolerable\nMedium → e.g. Moderate disruption\nHigh → e.g. Compliance breach\nCritical → e.g. Irreversible harm"}
+    INT --> AVAIL
+
+    AVAIL{"AVAILABILITY\nImpact if unavailable?\n─────────────────\nLow → e.g. Minimal impact\nMedium → e.g. Some functions down\nHigh → e.g. Financial impact\nCritical → e.g. Life safety risk"}
+    AVAIL --> RESULT
+
+    RESULT["📊 CLASSIFICATION RESULT\n─────────────────\n■ Overall: Public / Internal /\n  Confidential / Restricted\n■ CIA Breakdown\n■ GDPR Flags\n■ ISO 27001 Controls Applied\n─────────────────\n📋 DOCUMENTATION OUTPUT\n─────────────────\nMarkdown template:\n\n## Dataset: [Name]\nClassification: [Label]\nConfidentiality: [Level]\nIntegrity: [Level]\nAvailability: [Level]\nGDPR: [Categories]\nControls: [List]\nRules Applied: [Audit trail]"]
+
+    %% Styling
+    classDef startNode fill:#111,stroke:#A8FFA3,stroke-width:2px,color:#fff
+    classDef nameNode fill:#111,stroke:#5BFF54,stroke-width:2px,color:#fff
+    classDef decisionNode fill:#1a1a1a,stroke:#A8FFA3,stroke-width:2px,color:#fff
+    classDef actionNode fill:#111,stroke:#555,stroke-width:1px,color:#fff
+    classDef resultNode fill:#0a1a0a,stroke:#A8FFA3,stroke-width:3px,color:#A8FFA3
+
+    class START startNode
+    class NAME nameNode
+    class PII,CONF,INT,AVAIL decisionNode
+    class GDPR_CAT actionNode
+    class RESULT resultNode
